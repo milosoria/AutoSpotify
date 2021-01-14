@@ -1,20 +1,20 @@
 import requests
 import json
-from secrets import secrets
 
 class CreateAndPopulate:
     
     def __init__(self):
-        self.client_id = secrets["client_id"] 
-        self.client_secret = secrets["client_secret"]
-        self.spotify_token = secrets["access_token"]
+        with open("secrets.json","r") as f:
+            self.json = json.load(f)
+        self.client_id = self.json["config"]["client_id"] 
+        self.client_secret = self.json["config"]["client_secret"]
+        self.spotify_token = self.json["config"]["access_token"]
         self.scope = 'playlist-modify-public'
-        
 
     def create_playlist(self):
         r = json.dumps({
             "name":"NANAANANAN",
-            "description": "Top 5 tracks of each of my top and most streamed artists",
+            "description": "tracks released on 2020-2021",
             "public": True
         })
         endpoint = "https://api.spotify.com/v1/users/{}/playlists".format(self.client_id )
@@ -28,9 +28,9 @@ class CreateAndPopulate:
         )
         self.playlist_id = response.json()["id"]
     
-    def get_artist_id(self, artists):
-        ids = []
-        for artist in artists:
+    def get_artist_name(self):
+        names = []
+        for artist in self.json["artists"]:
             query= "https://api.spotify.com/v1/search?query=%3A{}&type=artist&limit=1".format(artist)
             response = requests.get(
                 query,
@@ -39,13 +39,13 @@ class CreateAndPopulate:
                     "Authorization": "Bearer {}".format(self.spotify_token)
                 }
             )
-            ids.append(response.json()['artists']['items'][0]['id'])   
-        return ids
+            names.append(response.json()['artists']['items'][0]['name'])   
+        return names
 
-    def get_top5_songs(self, ids):
-        tops = []
-        for id in ids:
-            endpoint = "https://api.spotify.com/v1/artists/{}/top-tracks?country=US".format(id)
+    def get_songs(self, names):
+        songs = []
+        for name in names:
+            endpoint = "https://api.spotify.com/v1/search?q=artist:%22{}%22%20year:2020-2021&type=track&limit=20".format(name)
             response = requests.get(
                 endpoint,
                 headers={
@@ -53,14 +53,14 @@ class CreateAndPopulate:
                     "Authorization": "Bearer {}".format(self.spotify_token)
                 }
             )
-            tops.extend(list(map(lambda x: x['uri'],response.json()['tracks'])))
-        return tops
+            songs.extend(list(map(lambda x: x['uri'],response.json()['tracks']['items'])))
+        return songs
 
-    def populate(self, top5):
+    def populate(self, songs):
         j = 0
-        div = len(top5)//100
-        for i in range(div, len(top5)+1, div):
-            request_data = json.dumps(top5[j:i])
+        div = len(songs)//100
+        for i in range(div, len(songs)+1, div):
+            request_data = json.dumps(songs[j:i])
             endpoint = "https://api.spotify.com/v1/playlists/{}/tracks".format(self.playlist_id)
             response = requests.post(
                     endpoint,
@@ -76,6 +76,4 @@ class CreateAndPopulate:
 if __name__ == "__main__":
     main = CreateAndPopulate()
     main.create_playlist()
-    with open("artists.json", "r") as f:
-        artists = json.load(f)['artists']
-        main.populate(main.get_top5_songs(main.get_artist_id(artists)))
+    main.populate(main.get_songs(main.get_artist_name()))
