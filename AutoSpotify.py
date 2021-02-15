@@ -13,7 +13,7 @@ class CreateAndPopulate:
 
     def create_playlist(self):
         r = json.dumps({
-            "name":"NANAANANAN",
+            "name":"rapppa trappa 🔥",
             "description": "tracks released on 2020-2021",
             "public": True
         })
@@ -53,8 +53,10 @@ class CreateAndPopulate:
                     "Authorization": "Bearer {}".format(self.spotify_token)
                 }
             )
-            songs.extend(list(map(lambda x: x['uri'],response.json()['tracks']['items'])))
-        return songs
+            for song in response.json()['tracks']['items']:
+                if song['name'] not in list(map(lambda x: x['name'], songs)):
+                    songs.append(song)
+        return list(map(lambda x: x['uri'],songs))
 
     def populate(self, songs):
         j = 0
