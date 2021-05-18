@@ -13,8 +13,8 @@ class CreateAndPopulate:
 
     def create_playlist(self):
         r = json.dumps({
-            "name":"rapppa trappa 🔥",
-            "description": "tracks released on 2020-2021",
+            "name":"rappa trappa 2021 🔥",
+            "description": "tracks released on 2021",
             "public": True
         })
         endpoint = "https://api.spotify.com/v1/users/{}/playlists".format(self.client_id )
@@ -39,13 +39,14 @@ class CreateAndPopulate:
                     "Authorization": "Bearer {}".format(self.spotify_token)
                 }
             )
-            names.append(response.json()['artists']['items'][0]['name'])   
+            if len(response.json()['artists']['items']) != 0:
+                names.append(response.json()['artists']['items'][0]['name'])   
         return names
 
     def get_songs(self, names):
         songs = []
         for name in names:
-            endpoint = "https://api.spotify.com/v1/search?q=artist:%22{}%22%20year:2020-2021&type=track&limit=20".format(name)
+            endpoint = "https://api.spotify.com/v1/search?q=artist:%22{}%22%20year:2021&type=track&limit=20".format(name)
             response = requests.get(
                 endpoint,
                 headers={
@@ -76,6 +77,10 @@ class CreateAndPopulate:
         return response.json()
 
 if __name__ == "__main__":
-    main = CreateAndPopulate()
-    main.create_playlist()
-    main.populate(main.get_songs(main.get_artist_name()))
+    print("Starting Playlist and populating... 🧞🎹")
+    try:
+        main = CreateAndPopulate()
+        main.create_playlist()
+        main.populate(main.get_songs(main.get_artist_name()))
+    except Exception as e:
+        print(f"Error ⁉️ {e}")
